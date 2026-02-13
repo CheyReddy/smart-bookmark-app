@@ -11,81 +11,74 @@ export default function Dashboard(): JSX.Element {
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
 
-  // 🔐 Protect dashboard
   useEffect(() => {
     const checkUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.push("/");
-      }
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) router.push("/");
     };
-
     checkUser();
   }, [router]);
+
+  const normalizeUrl = (url: string): string =>
+    /^https?:\/\//i.test(url) ? url : `https://${url}`;
 
   const addBookmark = async () => {
     if (!title || !url) return;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const { data, error } = await supabase
       .from("bookmarks")
       .insert({
         title,
-        url,
+        url: normalizeUrl(url),
         user_id: user.id,
       })
-      .select() // 👈 IMPORTANT
+      .select()
       .single();
 
-    if (error) {
-      console.error(error.message);
-      return;
+    if (!error) {
+      window.dispatchEvent(
+        new CustomEvent("bookmark-added", { detail: data })
+      );
+      setTitle("");
+      setUrl("");
     }
-
-    // 🔥 Dispatch custom event to update list instantly
-    window.dispatchEvent(
-      new CustomEvent("bookmark-added", { detail: data })
-    );
-
-    setTitle("");
-    setUrl("");
   };
 
-
   return (
-    <div className="p-8 space-y-4">
-      <input
-        type="text"
-        placeholder="Title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className="border px-3 py-2 rounded w-full"
-      />
+    <div className="min-h-screen px-4 pt-7 bg-gray-50">
+      <h1 className="text-center text-2xl text-black sm:text-3xl md:text-4xl font-bold mb-4">
+        Smart Bookmark App
+      </h1>
 
-      <input
-        type="url"
-        placeholder="URL"
-        value={url}
-        onChange={(e) => setUrl(e.target.value)}
-        className="border px-3 py-2 rounded w-full"
-      />
+      <div className="max-w-xl mx-auto bg-black p-6 sm:p-8 rounded-xl shadow space-y-4">
+        <input
+          type="text"
+          placeholder="Title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className="w-full border px-4 py-2 rounded focus:outline-none focus:ring focus:ring-green-300"
+        />
 
-      <button
-        onClick={addBookmark}
-        className="px-4 py-2 bg-black text-white rounded"
-      >
-        Add
-      </button>
+        <input
+          type="url"
+          placeholder="URL"
+          value={url}
+          onChange={(e) => setUrl(e.target.value)}
+          className="w-full border px-4 py-2 rounded focus:outline-none focus:ring focus:ring-green-300"
+        />
 
-      <BookmarkList />
+        <button
+          onClick={addBookmark}
+          className="w-full bg-green-700 cursor-pointer hover:bg-green-800 text-white text-lg py-2 rounded transition"
+        >
+          Add Bookmark
+        </button>
+
+        <BookmarkList />
+      </div>
     </div>
   );
 }

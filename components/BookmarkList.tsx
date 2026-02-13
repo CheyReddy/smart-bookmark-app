@@ -23,7 +23,9 @@ export default function BookmarkList() {
   };
 
   const deleteBookmark = async (id: string) => {
-    await supabase.from("bookmarks").delete().eq("id", id);
+    await supabase.from("bookmarks")
+                  .delete()
+                  .eq("id", id);
     setBookmarks((prev) => prev.filter((b) => b.id !== id));
   };
 
@@ -71,33 +73,39 @@ export default function BookmarkList() {
   }, []);
 
   return (
-    <ul className="space-y-3 mt-6">
-      {bookmarks.length === 0 && (
-        <p className="text-gray-500">No bookmarks yet</p>
-      )}
+    <div className="py-4">
+      <p className="text-center text-3xl mb-3"><b>Bookmarks List</b></p>
+      <div className="px-10 h-[45vh] overflow-y-auto">
+        <ul className="space-y-3 mt-6">
+        {bookmarks.length === 0 && (
+          <p className="text-gray-500 text-center mt-20">No bookmarks yet</p>
+        )}
 
-      {bookmarks.map((bookmark) => (
-        <li
-          key={bookmark.id}
-          className="flex justify-between items-center border p-3 rounded"
-        >
-          <a
-            href={bookmark.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 underline"
+        {bookmarks.map((bookmark) => (
+          
+          <li
+            key={bookmark.id}
+            className="flex justify-between items-center border p-3 rounded"
           >
-            {bookmark.title}
-          </a>
+            <a
+              href={bookmark.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-300 px-3 underline"
+            >
+              {bookmark.title}
+            </a>
 
-          <button
-            onClick={() => deleteBookmark(bookmark.id)}
-            className="text-red-600"
-          >
-            Delete
-          </button>
-        </li>
-      ))}
-    </ul>
+            <button
+              onClick={() => deleteBookmark(bookmark.id)}
+              className="text-red-600 px-3 cursor-pointer"
+            >
+              Delete
+            </button>
+          </li>
+        ))}
+      </ul>
+      </div>
+    </div>
   );
 }
