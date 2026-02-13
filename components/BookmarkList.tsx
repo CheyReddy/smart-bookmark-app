@@ -1,6 +1,6 @@
 "use client";
 
-import { JSX, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 
 interface Bookmark {
@@ -9,53 +9,69 @@ interface Bookmark {
   url: string;
 }
 
-export default function BookmarkList(): JSX.Element {
+export default function BookmarkList() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
 
-  const fetchBookmarks = async (): Promise<void> => {
+  // Fetch bookmarks for logged-in user
+  const fetchBookmarks = async (uid: string) => {
     const { data, error } = await supabase
       .from("bookmarks")
       .select("id, title, url")
+      .eq("user_id", uid)
       .order("created_at", { ascending: false });
 
-    if (!error) {
-      setBookmarks(data ?? []);
+    if (error) {
+      console.error("Fetch error:", error.message);
+      return;
     }
+
+    setBookmarks(data ?? []);
   };
 
-  const deleteBookmark = async (id: string): Promise<void> => {
-    await supabase.from("bookmarks").delete().eq("id", id);
+  // Delete bookmark
+  const deleteBookmark = async (id: string) => {
+    const { error } = await supabase.from("bookmarks").delete().eq("id", id);
+    if (error) console.error(error.message);
   };
 
   useEffect(() => {
-  const setupRealtime = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    let channel: any;
 
-    fetchBookmarks();
+    const init = async () => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
-    const channel = supabase
-      .channel("realtime-bookmarks")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "bookmarks",
-          filter: `user_id=eq.${user.id}`,
-        },
-        fetchBookmarks
-      )
-      .subscribe();
+      if (!user) return;
+
+      setUserId(user.id);
+
+      // Initial fetch
+      await fetchBookmarks(user.id);
+
+      // Realtime subscription
+      channel = supabase
+        .channel("realtime-bookmarks")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "bookmarks",
+            filter: `user_id=eq.${user.id}`,
+          },
+          () => fetchBookmarks(user.id)
+        )
+        .subscribe();
+    };
+
+    init();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) supabase.removeChannel(channel);
     };
-  };
-
-  setupRealtime();
-}, []);
-
+  }, []);
 
   return (
     <ul className="space-y-3 mt-6">
