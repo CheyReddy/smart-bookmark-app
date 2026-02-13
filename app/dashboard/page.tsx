@@ -27,10 +27,7 @@ export default function Dashboard(): JSX.Element {
   }, [router]);
 
   const addBookmark = async () => {
-    if (!title.trim() || !url.trim()) {
-      alert("Title and URL required");
-      return;
-    }
+    if (!title || !url) return;
 
     const {
       data: { user },
@@ -38,20 +35,30 @@ export default function Dashboard(): JSX.Element {
 
     if (!user) return;
 
-    const { error } = await supabase.from("bookmarks").insert({
-      title,
-      url,
-      user_id: user.id,
-    });
+    const { data, error } = await supabase
+      .from("bookmarks")
+      .insert({
+        title,
+        url,
+        user_id: user.id,
+      })
+      .select() // 👈 IMPORTANT
+      .single();
 
     if (error) {
       console.error(error.message);
       return;
     }
 
+    // 🔥 Dispatch custom event to update list instantly
+    window.dispatchEvent(
+      new CustomEvent("bookmark-added", { detail: data })
+    );
+
     setTitle("");
     setUrl("");
   };
+
 
   return (
     <div className="p-8 space-y-4">

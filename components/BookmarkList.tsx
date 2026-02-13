@@ -11,28 +11,20 @@ interface Bookmark {
 
 export default function BookmarkList() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
-  const [userId, setUserId] = useState<string | null>(null);
 
-  // Fetch bookmarks for logged-in user
   const fetchBookmarks = async (uid: string) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from("bookmarks")
       .select("id, title, url")
       .eq("user_id", uid)
       .order("created_at", { ascending: false });
 
-    if (error) {
-      console.error("Fetch error:", error.message);
-      return;
-    }
-
     setBookmarks(data ?? []);
   };
 
-  // Delete bookmark
   const deleteBookmark = async (id: string) => {
-    const { error } = await supabase.from("bookmarks").delete().eq("id", id);
-    if (error) console.error(error.message);
+    await supabase.from("bookmarks").delete().eq("id", id);
+    setBookmarks((prev) => prev.filter((b) => b.id !== id));
   };
 
   useEffect(() => {
@@ -45,12 +37,16 @@ export default function BookmarkList() {
 
       if (!user) return;
 
-      setUserId(user.id);
-
-      // Initial fetch
       await fetchBookmarks(user.id);
 
-      // Realtime subscription
+      // 🔥 Optimistic listener
+      const onAdd = (e: any) => {
+        setBookmarks((prev) => [e.detail, ...prev]);
+      };
+
+      window.addEventListener("bookmark-added", onAdd);
+
+      // 🔄 Realtime (backup sync)
       channel = supabase
         .channel("realtime-bookmarks")
         .on(
@@ -64,13 +60,14 @@ export default function BookmarkList() {
           () => fetchBookmarks(user.id)
         )
         .subscribe();
+
+      return () => {
+        window.removeEventListener("bookmark-added", onAdd);
+        supabase.removeChannel(channel);
+      };
     };
 
     init();
-
-    return () => {
-      if (channel) supabase.removeChannel(channel);
-    };
   }, []);
 
   return (
