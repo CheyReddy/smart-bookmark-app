@@ -2,17 +2,13 @@
 import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
-  const login = async () => {
     const login = async () => {
-  await supabase.auth.signInWithOAuth({
-    provider: "google",
-    options: {
-      redirectTo: "http://localhost:3000/dashboard",
-    },
-  });
-};
-
-
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: `${location.origin}/dashboard`,
+      },
+    });
   };
 
   return (
