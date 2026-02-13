@@ -2,7 +2,6 @@
 import { supabase } from "@/lib/supabaseClient";
 
 export default function Home() {
-  const login = async () => {
     const login = async () => {
   await supabase.auth.signInWithOAuth({
     provider: "google",
@@ -11,9 +10,6 @@ export default function Home() {
     },
   });
 };
-
-
-  };
 
   return (
     <div className="h-screen flex items-center justify-center">
