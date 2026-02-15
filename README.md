@@ -115,6 +115,11 @@ GitHub: https://github.com/CheyReddy
 
 LinkedIn: https://www.linkedin.com/in/chaithanya-reddy/
 
+
+Problems I have faced:
+1) While connecting to supabase I faced issue.
+2) And when adding OAuth I faced issue.
+
 <img width="1918" height="1092" alt="login_page" src="https://github.com/user-attachments/assets/f3577070-ca12-4bf0-b5eb-ea181b923882" />
 
 <img width="1916" height="1081" alt="dashboard" src="https://github.com/user-attachments/assets/a5da1ec2-4470-4e63-a922-3f875337b504" />
